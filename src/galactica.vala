@@ -17,7 +17,6 @@ namespace Galactica {
     /* internal state stuff */
     private uint active_file;
     private List<string> media_files;
-    private KeyboardListener kbl;
     /* GStreamer stuff */
     static MainLoop loop;
     private Gst.Pipeline pipeline;
@@ -46,8 +45,6 @@ namespace Galactica {
       pipeline.add (playbin);
       bus = pipeline.get_bus ();
       bus.add_watch (bus_call);
-      kbl = new KeyboardListener ();
-      kbl.start ();
       pipeline.set_state (Gst.State.NULL);
     }
 
@@ -201,7 +198,6 @@ namespace Galactica {
     public void load_next_or_quit () {
       if (!load_next ()) {
         stdout.printf ("End of playlist\n");
-        kbl.stop ();
         loop.quit ();
       } else {
         start_playing ();
