@@ -12,8 +12,13 @@ namespace Galactica {
     static bool repeat;
     static bool shuffle;
     static bool version;
+    static bool no_qos;
+    static bool no_audio;
+    static bool no_video;
+    static bool sync;
     [NoArrayLength ()]
     static string[] opt_media_files;
+    static string custom_pipeline;
     /* internal state stuff */
     private uint active_file;
     private List<string> media_files;
@@ -22,15 +27,22 @@ namespace Galactica {
     private Gst.Pipeline pipeline;
     private Gst.Element playbin;
     private Gst.Bus bus;
+    private Gst.Element audio_sink;
+    private Gst.Element video_sink;
 
     const OptionEntry[] options = {
       {"", 0, 0, OptionArg.FILENAME_ARRAY, ref opt_media_files, "media files", "FILE FOLDER..."},
+      {"sync", 'y', 0, OptionArg.NONE, ref sync, "Disable sync on the clock", null},
+      {"custom-pipeline", 'c', 0, OptionArg.STRING, ref custom_pipeline, "Play a custom pipeline", null},
       {"identify", 'i', 0, OptionArg.NONE, ref identify, "Print all the tags of the media files", null},
-      {"playbin2", 'p', 0, OptionArg.NONE, ref version, "Use Playbin2", null},
+      {"playbin2", 'p', 0, OptionArg.NONE, ref playbin2, "Use Playbin2", null},
       {"recursive", 'e', 0, OptionArg.NONE, ref recursive, "Search directories recursive", null},
       {"repeat", 'r', 0, OptionArg.NONE, ref repeat, "Repeat the playlist", null},
       {"shuffle", 's', 0, OptionArg.NONE, ref shuffle, "Shuffle playlist", null},
       {"version", 'v', 0, OptionArg.NONE, ref version, "Display version number", null},
+      {"no-qos", 'q', 0, OptionArg.NONE, ref no_qos, "Disable qos", null},
+      {"no-audio", 'a', 0, OptionArg.NONE, ref no_audio, "use fakesink as audio sink", null},
+      {"no-video", 'd', 0, OptionArg.NONE, ref no_video, "use fakesink as video sink", null},
       {null}
     };
 
@@ -38,17 +50,75 @@ namespace Galactica {
       active_file = 0;
       prepare_media_files ();
       pipeline = new Gst.Pipeline ("pipeline");
-      if (playbin2)
-        playbin = Gst.ElementFactory.make ("playbin2", "playbin");
-      else
-        playbin = Gst.ElementFactory.make ("playbin", "playbin");
+      audio_sink = null;
+      video_sink = null;
+      if (custom_pipeline == null) {
+        if (playbin2)
+          playbin = Gst.ElementFactory.make ("playbin2", "playbin");
+        else
+          playbin = Gst.ElementFactory.make ("playbin", "playbin");
+        disable_audio_sink ();
+        disable_video_sink ();
+        no_qos_element ();
+        sync_element ();
+      } else {
+        stdout.printf ("Using a custom pipeline: %s\n", custom_pipeline);
+        playbin = Gst.parse_launch (custom_pipeline);
+      }
       pipeline.add (playbin);
       bus = pipeline.get_bus ();
       bus.add_watch (bus_call);
       pipeline.set_state (Gst.State.NULL);
     }
 
+    private void no_qos_element () {
+      if (no_qos) {
+        if (audio_sink == null) {
+          audio_sink = Gst.ElementFactory.make ("alsasink", null);
+          playbin.set ("audio-sink", audio_sink);
+        }
+        audio_sink.set ("qos", false);
+        if (video_sink == null) {
+         video_sink = Gst.ElementFactory.make ("xvimagesink", null);
+         playbin.set ("video-sink", video_sink);
+        }
+        video_sink.set ("qos", false);
+      }
+    }
+
+    private void sync_element () {
+      if (sync) {
+        stdout.printf ("Disable sync to clock\n");
+        if (audio_sink == null) {
+          audio_sink = Gst.ElementFactory.make ("alsasink", null);
+          playbin.set ("audio-sink", audio_sink);
+        }
+        audio_sink.set ("sync", false);
+        if (video_sink == null) {
+         video_sink = Gst.ElementFactory.make ("xvimagesink", null);
+          playbin.set ("video-sink", video_sink);
+        }
+        video_sink.set ("sync", false);
+      }
+    }
+
+    private void disable_audio_sink () {
+      if (no_audio ) {
+        audio_sink = Gst.ElementFactory.make ("fakesink", null);
+        playbin.set ("audio-sink", audio_sink);
+      }
+    }
+
+    private void disable_video_sink () {
+      if (no_video ) {
+        video_sink = Gst.ElementFactory.make ("fakesink", null);
+        playbin.set ("video-sink", video_sink);
+      }
+    }
+
     private void prepare_media_files () {
+      if (opt_media_files == null)
+        return;
       media_files = new List<string> ();
       foreach (string media in opt_media_files)
         add_uri (media, true);
@@ -258,7 +328,7 @@ namespace Galactica {
         return 1;
       }
 
-      if (opt_media_files == null) {
+      if (opt_media_files == null && custom_pipeline == null) {
         stderr.printf ("No media files specified.\n");
         return 1;
       }
