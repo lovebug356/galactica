@@ -138,8 +138,28 @@ namespace Galactica {
           }
         }
       } else {
-        string temp = convert_to_uri (uri);
-        media_files.append (temp);
+        if (uri.has_suffix ("m3u")) {
+          stdout.printf ("Parsing file as m3u file %s\n", uri);
+          string content;
+          ulong len;
+          FileUtils.get_contents (uri, out content, out len);
+          string[] m3u_item = content.split ("\n");
+          string [] folders = uri.split("/");
+          string base_dir = "";
+          string last = "";
+          foreach (string f in folders) {
+            base_dir = base_dir + last;
+            last = f + "/";
+          }
+          foreach (string item in m3u_item) {
+            if (item != "")
+              add_uri (base_dir + item, false);
+          }
+          
+        } else {
+          string temp = convert_to_uri (uri);
+          media_files.append (temp);
+        }
       }
     }
 
