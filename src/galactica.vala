@@ -19,9 +19,12 @@ namespace Galactica {
     [NoArrayLength ()]
     static string[] opt_media_files;
     static string custom_pipeline;
+    static string m3u_filename;
     /* internal state stuff */
     private uint active_file;
     private List<string> media_files;
+    private Console cons;
+    private bool playing;
     /* GStreamer stuff */
     static MainLoop loop;
     private Gst.Pipeline pipeline;
@@ -32,23 +35,25 @@ namespace Galactica {
 
     const OptionEntry[] options = {
       {"", 0, 0, OptionArg.FILENAME_ARRAY, ref opt_media_files, "media files", "FILE FOLDER..."},
-      {"sync", 'y', 0, OptionArg.NONE, ref sync, "Disable sync on the clock", null},
+      {"no-audio", 'a', 0, OptionArg.NONE, ref no_audio, "use fakesink as audio sink", null},
       {"custom-pipeline", 'c', 0, OptionArg.STRING, ref custom_pipeline, "Play a custom pipeline", null},
+      {"no-video", 'd', 0, OptionArg.NONE, ref no_video, "use fakesink as video sink", null},
+      {"recursive", 'e', 0, OptionArg.NONE, ref recursive, "Search directories recursive", null},
+      {"sync", 'y', 0, OptionArg.NONE, ref sync, "Disable sync on the clock", null},
       {"identify", 'i', 0, OptionArg.NONE, ref identify, "Print all the tags of the media files", null},
       {"playbin2", 'p', 0, OptionArg.NONE, ref playbin2, "Use Playbin2", null},
-      {"recursive", 'e', 0, OptionArg.NONE, ref recursive, "Search directories recursive", null},
+      {"no-qos", 'q', 0, OptionArg.NONE, ref no_qos, "Disable qos", null},
       {"repeat", 'r', 0, OptionArg.NONE, ref repeat, "Repeat the playlist", null},
       {"shuffle", 's', 0, OptionArg.NONE, ref shuffle, "Shuffle playlist", null},
       {"version", 'v', 0, OptionArg.NONE, ref version, "Display version number", null},
-      {"no-qos", 'q', 0, OptionArg.NONE, ref no_qos, "Disable qos", null},
-      {"no-audio", 'a', 0, OptionArg.NONE, ref no_audio, "use fakesink as audio sink", null},
-      {"no-video", 'd', 0, OptionArg.NONE, ref no_video, "use fakesink as video sink", null},
+      {"save-m3u", 'u', 0, OptionArg.STRING, ref m3u_filename, "Save playlist as m3u file", null},
       {null}
     };
 
     construct {
       active_file = 0;
       prepare_media_files ();
+      save_m3u_file ();
       pipeline = new Gst.Pipeline ("pipeline");
       audio_sink = null;
       video_sink = null;
@@ -69,6 +74,33 @@ namespace Galactica {
       bus = pipeline.get_bus ();
       bus.add_watch (bus_call);
       pipeline.set_state (Gst.State.NULL);
+      playing = false;
+      cons = new Console ();
+      cons.start ();
+      cons.key_press += (cons, code) => console_keypress (code);
+      cons.stopped += cons => console_stopped ();
+    }
+
+    private void console_stopped () {
+      stdout.printf ("Bye Bye\n");
+      loop.quit ();
+    }
+
+    private void save_m3u_file () {
+      if (m3u_filename != null) {
+        string content = "";
+        FileStream m3u = FileStream.open (m3u_filename, "w");
+        foreach (string uri in media_files) {
+          string[] parts = uri.split ("file://");
+          foreach (string part in parts) {
+            if (part != "") {
+              m3u.printf (part);
+              m3u.printf ("\n");
+            }
+          }
+        }
+        stdout.printf ("saving playlist to : %s\n", m3u_filename);
+      }
     }
 
     private void no_qos_element () {
@@ -139,23 +171,7 @@ namespace Galactica {
         }
       } else {
         if (uri.has_suffix ("m3u")) {
-          stdout.printf ("Parsing file as m3u file %s\n", uri);
-          string content;
-          ulong len;
-          FileUtils.get_contents (uri, out content, out len);
-          string[] m3u_item = content.split ("\n");
-          string [] folders = uri.split("/");
-          string base_dir = "";
-          string last = "";
-          foreach (string f in folders) {
-            base_dir = base_dir + last;
-            last = f + "/";
-          }
-          foreach (string item in m3u_item) {
-            if (item != "")
-              add_uri (base_dir + item, false);
-          }
-          
+          load_m3u_file (uri);
         } else {
           string temp = convert_to_uri (uri);
           media_files.append (temp);
@@ -167,11 +183,43 @@ namespace Galactica {
       pipeline.set_state (Gst.State.NULL);
     }
 
+    private void load_m3u_file (string uri) {
+      string content;
+      ulong len;
+      string[] m3u_item;
+      string[] folders;
+      string base_dir = "";
+      string last = "";
+
+      stdout.printf ("Parsing file as m3u file %s\n", uri);
+
+      /* find the base dir of the uri */
+      folders = uri.split("/");
+      foreach (string f in folders) {
+        base_dir = base_dir + last;
+        last = f + "/";
+      }
+
+      FileUtils.get_contents (uri, out content, out len);
+      m3u_item = content.split ("\n");
+
+      foreach (string item in m3u_item) {
+        if (item != "" && !item.has_prefix ("#")) {
+          if (item.has_prefix ("http://"))
+            add_uri (item, false);
+          else
+            add_uri (base_dir + item, false);
+        }
+      }
+    }
+
     private bool bus_call (Gst.Bus bus, Gst.Message message) {
       switch (message.type) {
         case MessageType.EOS:
-          stdout.printf ("EOS detected\n");
-          load_next_or_quit ();
+          stdout.printf ("EOS detected\r");
+          lock (pipeline) {
+            load_next_or_quit ();
+          }
           break;
         case MessageType.ERROR:
           {
@@ -179,7 +227,9 @@ namespace Galactica {
             GLib.Error error = null;
             message.parse_error (out error, null);
             stdout.printf ("Error:%s\n".printf (error.message));
-            load_next_or_quit ();
+            lock (pipeline) {
+              load_next_or_quit ();
+            }
           }
           break;
         case MessageType.TAG:
@@ -190,6 +240,13 @@ namespace Galactica {
             message.parse_tag (out tag_list);
             tag_list.foreach ((TagForeachFunc)dump_tag);
           }
+          break;
+        case MessageType.BUFFERING:
+          var s = message.get_structure ();
+          int p;
+          s.get_int ("buffer-percent", out p);
+          stdout.printf ("Buffering : %d %\r", p);
+          stdout.flush ();
           break;
         default:
           break;
@@ -216,6 +273,7 @@ namespace Galactica {
     }
 
     private static void dump_tag (Gst.TagList list, string tag) {
+
       switch ((string)tag) {
         case TAG_TITLE:
         case TAG_ARTIST:
@@ -283,12 +341,13 @@ namespace Galactica {
       }
       playbin.set ("uri", media_file);
       pipeline.set_state (Gst.State.PAUSED);
+      playing = false;
     }
 
     public void load_next_or_quit () {
       if (!load_next ()) {
         stdout.printf ("End of playlist\n");
-        loop.quit ();
+        cons.stop ();
       } else {
         start_playing ();
       }
@@ -306,6 +365,15 @@ namespace Galactica {
         media_files.append ("%s".printf (temp_list.nth_data (random)));
         temp_list.remove_link (temp_list.nth (random));
       }
+    }
+
+    public void load_prev () {
+      if (active_file <= 2)
+        active_file = 0;
+      else
+        active_file -= 2;
+      if (load_next ())
+        start_playing ();
     }
 
     public bool load_next () {
@@ -329,6 +397,32 @@ namespace Galactica {
 
     public void start_playing () {
       pipeline.set_state (Gst.State.PLAYING);
+      playing = true;
+    }
+
+    private void console_keypress (int code) {
+      if (code == 113) {
+        cons.stop ();
+      } else if (code == 32) {
+        lock (pipeline) {
+          if (playing) {
+            pipeline.set_state (State.PAUSED);
+          } else {
+            pipeline.set_state (State.PLAYING);
+          }
+          playing = !playing;
+        }
+      } else if (code == 110) {
+        lock (pipeline) {
+          load_next_or_quit ();
+        }
+      } else if (code == 112) {
+        lock (pipeline) {
+          load_prev ();
+        }
+      } else {
+        message ("code %d", code);
+      }
     }
 
     public static int main (string [] args) {
