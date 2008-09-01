@@ -260,16 +260,20 @@ namespace Galactica {
       stdout.printf ("%s : %s\n", name, (temp ? "True" : "False"));
     }
 
-    private static void dump_tag_time (Gst.TagList list, string tag, string name) {
-      uint64 temp;
-      list.get_uint64 (tag, out temp);
+    public static string make_time_to_string (uint64 temp) {
       uint64 second = temp / Gst.SECOND;
       temp %= Gst.SECOND;
       uint64 hour = second / 3600;
       second %= 3600;
       uint64 minute = second / 60;
       second %= 60;
-      stdout.printf ("%s : %.2d:%.2d:%.2d.%d\n", name, (int)hour, (int)minute, (int)second, (int)temp);
+      return "%.2d:%.2d:%.2d.%d".printf ((int)hour, (int)minute, (int)second, (int)temp);
+    }
+
+    private static void dump_tag_time (Gst.TagList list, string tag, string name) {
+      uint64 temp;
+      list.get_uint64 (tag, out temp);
+      stdout.printf ("%s : %s\n", name, make_time_to_string (temp));
     }
 
     private static void dump_tag (Gst.TagList list, string tag) {
@@ -400,6 +404,30 @@ namespace Galactica {
       playing = true;
     }
 
+    private void seek (bool forward, int sec) {
+      int64 pos;
+      Gst.Format format;
+
+      format = Format.TIME;
+      pipeline.query_position (ref format, out pos);
+      if (format != Format.TIME) {
+        stdout.printf  ("seeking is not supported in this format (%d)\n", format);
+        return;
+      }
+      if (format == CLOCK_TIME_NONE) {
+        stdout.printf ("Failed to query position can't seek\n");
+        return;
+      }
+      if (forward)
+        pos += (sec * SECOND);
+      else
+        pos -= (sec * SECOND);
+      if (pos < 0)
+        pos = 0;
+      stdout.printf ("seeking to: %s\n", GalacticaApp.make_time_to_string ((uint64)pos));
+      pipeline.seek_simple (format, SeekFlags.FLUSH, pos);
+    }
+
     private void console_keypress (int code) {
       if (code == 113) {
         cons.stop ();
@@ -420,8 +448,24 @@ namespace Galactica {
         lock (pipeline) {
           load_prev ();
         }
+      } else if (code == 67 || code == 108) {
+        lock (pipeline) {
+          seek (true, 10);
+        }
+      } else if (code == 68 || code == 104) {
+        lock (pipeline) {
+          seek (false, 10);
+        }
+      } else if (code == 65 || code == 107) {
+        lock (pipeline) {
+          seek (true, 60);
+        }
+      } else if (code == 66 || code == 106) {
+        lock (pipeline) {
+          seek (false, 60);
+        }
       } else {
-        message ("code %d", code);
+        // message ("code %d", code);
       }
     }
 
