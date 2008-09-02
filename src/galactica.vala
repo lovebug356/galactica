@@ -4,7 +4,7 @@ using GLib;
 namespace Galactica {
 
   public class GalacticaApp : GLib.Object {
-    const string version_string = "0.0.1";
+    const string version_string = "0.1.0";
     /* options stuff */
     static bool identify;
     static bool playbin2;
@@ -20,6 +20,7 @@ namespace Galactica {
     static string[] opt_media_files;
     static string custom_pipeline;
     static string m3u_filename;
+    static Output output;
     /* internal state stuff */
     private uint active_file;
     private List<string> media_files;
@@ -67,12 +68,13 @@ namespace Galactica {
         no_qos_element ();
         sync_element ();
       } else {
-        stdout.printf ("Using a custom pipeline: %s\n", custom_pipeline);
+        output.message ("Using a custom pipeline: %s".printf (custom_pipeline), true);
         playbin = Gst.parse_launch (custom_pipeline);
       }
       pipeline.add (playbin);
       bus = pipeline.get_bus ();
       bus.add_watch (bus_call);
+      output.query_stop ();
       pipeline.set_state (Gst.State.NULL);
       playing = false;
       cons = new Console ();
@@ -82,7 +84,8 @@ namespace Galactica {
     }
 
     private void console_stopped () {
-      stdout.printf ("Bye Bye\n");
+      output.query_stop ();
+      output.message ("Bye Bye", true);
       loop.quit ();
     }
 
@@ -99,7 +102,7 @@ namespace Galactica {
             }
           }
         }
-        stdout.printf ("saving playlist to : %s\n", m3u_filename);
+        output.message ("saving playlist to : %s".printf (m3u_filename), true);
       }
     }
 
@@ -120,7 +123,7 @@ namespace Galactica {
 
     private void sync_element () {
       if (sync) {
-        stdout.printf ("Disable sync to clock\n");
+        output.message ("Disable sync to clock", true);
         if (audio_sink == null) {
           audio_sink = Gst.ElementFactory.make ("alsasink", null);
           playbin.set ("audio-sink", audio_sink);
@@ -180,6 +183,7 @@ namespace Galactica {
     }
 
     ~GalacticaApp () {
+      output.query_stop ();
       pipeline.set_state (Gst.State.NULL);
     }
 
@@ -191,7 +195,7 @@ namespace Galactica {
       string base_dir = "";
       string last = "";
 
-      stdout.printf ("Parsing file as m3u file %s\n", uri);
+      output.message ("Parsing file as m3u file %s".printf (uri), true);
 
       /* find the base dir of the uri */
       folders = uri.split("/");
@@ -216,7 +220,7 @@ namespace Galactica {
     private bool bus_call (Gst.Bus bus, Gst.Message message) {
       switch (message.type) {
         case MessageType.EOS:
-          stdout.printf ("EOS detected\r");
+          output.message ("EOS detected", false);
           lock (pipeline) {
             load_next_or_quit ();
           }
@@ -226,7 +230,7 @@ namespace Galactica {
             remove_current_media_from_playlist ();
             GLib.Error error = null;
             message.parse_error (out error, null);
-            stdout.printf ("Error:%s\n".printf (error.message));
+            output.message ("Error : %s".printf (error.message), true);
             lock (pipeline) {
               load_next_or_quit ();
             }
@@ -245,7 +249,7 @@ namespace Galactica {
           var s = message.get_structure ();
           int p;
           s.get_int ("buffer-percent", out p);
-          stdout.printf ("Buffering : %d %\r", p);
+          output.message ("Buffering : %d %".printf (p), false);
           stdout.flush ();
           break;
         default:
@@ -257,23 +261,13 @@ namespace Galactica {
     private static void dump_tag_bool (Gst.TagList list, string tag, string name) {
       bool temp;
       list.get_boolean (tag, out temp);
-      stdout.printf ("%s : %s\n", name, (temp ? "True" : "False"));
-    }
-
-    public static string make_time_to_string (uint64 temp) {
-      uint64 second = temp / Gst.SECOND;
-      temp %= Gst.SECOND;
-      uint64 hour = second / 3600;
-      second %= 3600;
-      uint64 minute = second / 60;
-      second %= 60;
-      return "%.2d:%.2d:%.2d.%d".printf ((int)hour, (int)minute, (int)second, (int)temp);
+      output.message ("%s : %s".printf (name, (temp ? "True" : "False")), true);
     }
 
     private static void dump_tag_time (Gst.TagList list, string tag, string name) {
       uint64 temp;
       list.get_uint64 (tag, out temp);
-      stdout.printf ("%s : %s\n", name, make_time_to_string (temp));
+      output.message ("%s : %s".printf (name, output.time_to_string (temp)), true);
     }
 
     private static void dump_tag (Gst.TagList list, string tag) {
@@ -292,7 +286,7 @@ namespace Galactica {
           {
             string temp;
             list.get_string (tag, out temp);
-            stdout.printf ("%s : %s\n", tag_get_nick (tag), temp);
+            output.message ("%s : %s".printf (tag_get_nick (tag), temp), true);
           }
           break;
         case TAG_BITRATE:
@@ -306,9 +300,9 @@ namespace Galactica {
             if (tag == TAG_BITRATE || tag == TAG_NOMINAL_BITRATE)
             {
               double dtemp = temp / 1024.0;
-              stdout.printf ("%s : %.2f kbits/sec\n", tag_get_nick (tag), dtemp);
+              output.message ("%s : %.2f kbits/sec".printf (tag_get_nick (tag), dtemp), true);
             } else {
-              stdout.printf ("%s : %d\n", tag_get_nick (tag), (int)temp);
+              output.message ("%s : %d".printf (tag_get_nick (tag), (int)temp), true);
             }
           }
           break;
@@ -319,7 +313,7 @@ namespace Galactica {
           dump_tag_time (list, TAG_DURATION, "Duration");
           break;
         default:
-          stdout.printf ("unhandled tag : %s\n", tag);
+          output.message ("unhandled tag : %s".printf (tag), true);
           break;
       }
     }
@@ -327,7 +321,7 @@ namespace Galactica {
     private void remove_current_media_from_playlist () {
       string media_file = media_files.nth_data (--active_file);
       media_files.remove_link (media_files.nth (active_file));
-      stdout.printf ("Removing %s from playlist\n".printf (media_file));
+      output.message ("Removing %s from playlist".printf (media_file), true);
     }
 
     private string convert_to_uri (string media_file) {
@@ -339,18 +333,19 @@ namespace Galactica {
     }
 
     private void create_new_pipeline (string media_file) {
-      stdout.printf ("Now playing (%d/%d): %s\n".printf ((int)active_file, (int)media_files.length (), media_file));
+      output.message ("Now playing (%d/%d): %s".printf ((int)active_file, (int)media_files.length (), media_file), true);
       if (pipeline != null) {
         pipeline.set_state (Gst.State.NULL);
       }
       playbin.set ("uri", media_file);
+      output.query_stop ();
       pipeline.set_state (Gst.State.PAUSED);
       playing = false;
     }
 
     public void load_next_or_quit () {
       if (!load_next ()) {
-        stdout.printf ("End of playlist\n");
+        output.message ("End of playlist", true);
         cons.stop ();
       } else {
         start_playing ();
@@ -358,7 +353,7 @@ namespace Galactica {
     }
 
     private void shuffle_playlist () {
-      stdout.printf ("Shuffle mode: shuffling playlist\n");
+      output.message ("Shuffle mode: shuffling playlist", true);
       var length = media_files.length ();
       List<string> temp_list = new List<string> ();
       foreach (string a in media_files)
@@ -391,7 +386,7 @@ namespace Galactica {
         return true;
       } else {
         if (repeat && opt_media_files[0] != null) {
-          stdout.printf ("Repeat mode: back to start of playlist\n");
+          output.message ("Repeat mode: back to start of playlist", true);
           active_file = 0;
           return load_next ();
         }
@@ -400,6 +395,7 @@ namespace Galactica {
     }
 
     public void start_playing () {
+      output.query_pipeline (pipeline);
       pipeline.set_state (Gst.State.PLAYING);
       playing = true;
     }
@@ -411,11 +407,11 @@ namespace Galactica {
       format = Format.TIME;
       pipeline.query_position (ref format, out pos);
       if (format != Format.TIME) {
-        stdout.printf  ("seeking is not supported in this format (%d)\n", format);
+        output.message  ("seeking is not supported in this format (%d)".printf (format), true);
         return;
       }
       if (format == CLOCK_TIME_NONE) {
-        stdout.printf ("Failed to query position can't seek\n");
+        output.message ("Failed to query position can't seek", true);
         return;
       }
       if (forward)
@@ -424,21 +420,22 @@ namespace Galactica {
         pos -= (sec * SECOND);
       if (pos < 0)
         pos = 0;
-      stdout.printf ("seeking to: %s\n", GalacticaApp.make_time_to_string ((uint64)pos));
       pipeline.seek_simple (format, SeekFlags.FLUSH, pos);
     }
 
     private void console_keypress (int code) {
-      if (code == 113) {
+      if (code == 113 || code == 3) {
         cons.stop ();
       } else if (code == 32) {
         lock (pipeline) {
           if (playing) {
+            output.query_stop ();
             pipeline.set_state (State.PAUSED);
+            output.message ("=== PAUSED ===", false);
+            playing = false;
           } else {
-            pipeline.set_state (State.PLAYING);
+            start_playing ();
           }
-          playing = !playing;
         }
       } else if (code == 110) {
         lock (pipeline) {
@@ -464,30 +461,37 @@ namespace Galactica {
         lock (pipeline) {
           seek (false, 60);
         }
+      } else if (code == 114) {
+        lock (pipeline) {
+          remove_current_media_from_playlist ();
+          load_next_or_quit ();
+        }
       } else {
         // message ("code %d", code);
       }
     }
 
     public static int main (string [] args) {
+      output = new Output ();
+
       try {
         var opt_context = new OptionContext ("- Galactica Player");
         opt_context.set_help_enabled (true);
         opt_context.add_main_entries (options, null);
         opt_context.parse (ref args);
       } catch (OptionError e) {
-        stdout.printf ("%s\n", e.message);
-        stdout.printf ("Run '%s --help' to see a full list of available command line options.\n", args[0]);
+        output.message ("%s".printf (e.message), true);
+        output.message ("Run '%s --help' to see a full list of available command line options.".printf (args[0]), true);
         return 1;
       }
 
+      output.message ("Galactica Player %s".printf (version_string), true);
       if (version) {
-        stdout.printf ("Galactica Player %s\n".printf (version_string));
         return 1;
       }
 
       if (opt_media_files == null && custom_pipeline == null) {
-        stderr.printf ("No media files specified.\n");
+        output.message ("No media files specified.", true);
         return 1;
       }
 
