@@ -21,8 +21,10 @@ namespace Galactica {
 
     public void message (string message, bool new_line) {
       lock (busy) {
+        int expand_length = console_width () - (int)message.length;
         stdout.printf (message);
-        stdout.printf (expand_string (" ", console_width () - (int)message.length));
+        if (expand_length > 0)
+          stdout.printf (expand_string (" ", expand_length));
         if (new_line)
           stdout.printf ("\n");
         else
