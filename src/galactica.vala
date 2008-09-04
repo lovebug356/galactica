@@ -249,7 +249,7 @@ namespace Galactica {
           var s = message.get_structure ();
           int p;
           s.get_int ("buffer-percent", out p);
-          output.message ("Buffering : %d %".printf (p), false);
+          output.message ("Buffering : %d %%".printf (p), false);
           stdout.flush ();
           break;
         default:

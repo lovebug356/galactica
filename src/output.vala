@@ -19,8 +19,23 @@ namespace Galactica {
     [CCode (cname="console_width")]
     public extern int console_width ();
 
-    public void message (string message, bool new_line) {
+    private string message_scrap (string# message) {
+      string[] list = message.split ("%");
+      string temp = "";
+      foreach (string a in list) {
+        if (a != "") {
+          if (temp == "")
+            temp = a;
+          else
+            temp = temp + "%%" + a;
+        }
+      }
+      return temp;
+    }
+
+    public void message (string m, bool new_line) {
       lock (busy) {
+        string message = message_scrap (m);
         int expand_length = console_width () - (int)message.length;
         stdout.printf (message);
         if (expand_length > 0)
