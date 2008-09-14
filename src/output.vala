@@ -78,11 +78,16 @@ namespace Galactica {
     }
 
     public string progress_bar (double pos) {
+      int fill;
       int cw = console_width ();
+
       if (cw < 30)
         return "";
       cw = cw - 30 - 2;
-      int fill = (int) (cw * pos);
+      if (pos > 1.0 || pos < 0.0)
+        fill = 0;
+      else
+        fill = (int) (cw * pos);
       int empty = cw - fill;
       return "[" + expand_string ("=", fill) + expand_string (" ", empty) + "]";
     }
