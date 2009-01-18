@@ -23,7 +23,7 @@ namespace Galactica {
     static Output output;
     /* internal state stuff */
     private uint active_file;
-    private List<string> media_files;
+    private GLib.List<string> media_files;
     private Console cons;
     private bool playing;
     /* GStreamer stuff */
@@ -152,11 +152,13 @@ namespace Galactica {
     }
 
     private void prepare_media_files () {
-      if (opt_media_files == null)
-        return;
-      media_files = new List<string> ();
-      foreach (string media in opt_media_files)
+      media_files = new GLib.List<string> ();
+      int i = 0;
+      string media = opt_media_files[i++];
+      while (media != null) {
         add_uri (media, true);
+        media = opt_media_files[i++];
+      }
       media_files.sort ((CompareFunc)strcmp);
     }
 
@@ -355,10 +357,10 @@ namespace Galactica {
     private void shuffle_playlist () {
       output.message ("Shuffle mode: shuffling playlist", true);
       var length = media_files.length ();
-      List<string> temp_list = new List<string> ();
+      GLib.List<string> temp_list = new GLib.List<string> ();
       foreach (string a in media_files)
         temp_list.append ("%s".printf (a));
-      media_files = new List<string> ();
+      media_files = new GLib.List<string> ();
       while (temp_list.length () > 0) {
         int random = Random.int_range (0, (int32)temp_list.length ());
         media_files.append ("%s".printf (temp_list.nth_data (random)));

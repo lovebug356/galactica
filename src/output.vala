@@ -94,7 +94,7 @@ namespace Galactica {
 
     public void* query_duration () {
       int update_duration = 10;
-      int64 duration;
+      int64 duration = 0;
       lock (running) {
         while (running) {
           Thread.usleep (100000);
