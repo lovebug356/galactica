@@ -1,32 +1,55 @@
-#!/usr/bin/env python
+#! /usr/bin/env python
 
-import Options
-
-VERSION="0.1.0"
-APPNAME="Galactica"
+VERSION = '0.2.0'
+APPNAME = 'galactica'
+API_VERSION = '1.0'
 
 srcdir = '.'
 blddir = 'build'
 
-def set_options (opt):
-  opt.tool_options ('compiler_cc')
 
-def configure (conf):
-  conf.check_tool ('compiler_cc vala')
-  conf.check_pkg('glib-2.0', destvar='GLIB', vnum='2.10.0', mandatory=True)
-  conf.check_pkg('gstreamer-0.10', destvar='GSTREAMER', vnum='0.10', mandatory=True)
-  conf.check_pkg('gstreamer-base-0.10', destvar='GSTREAMER_BASE', vnum='0.10', mandatory=True)
-  conf.check_pkg('gstreamer-video-0.10', destvar='GSTREAMER_VIDEO', vnum='0.10', mandatory=True)
-  conf.check_pkg('gstreamer-interfaces-0.10', destvar='GSTREAMER_INTERFACES', vnum='0.10', mandatory=True)
+def set_options(opt):
+  opt.tool_options('compiler_cc')
+  opt.tool_options('gnu_dirs')
 
-def build (bld):
+def configure(conf):
+  conf.check_tool('compiler_cc cc misc vala gnu_dirs')
+  conf.check_cfg (package='gstreamer-0.10',
+      uselib_store='GSTREAMER',
+      mandatory=True,
+      args='--cflags --libs')
+  conf.check_cfg (package='core-1.0',
+      uselib_store='CORE',
+      mandatory=True,
+      args='--cflags --libs')
+  conf.check_cfg (package='lua5.1',
+      uselib_store='LUA',
+      mandatory=True,
+      args='--cflags --libs')
+
+  conf.define('PACKAGE', APPNAME)
+  conf.define('PACKAGE_NAME', APPNAME)
+  conf.define('PACKAGE_STRING', APPNAME + '-' + VERSION)
+  conf.define('PACKAGE_VERSION', APPNAME + '-' + VERSION)
+
+  conf.define('VERSION', VERSION)
+  conf.define('API_VERSION', API_VERSION)
+  conf.define('PACKAGE_VERSION', VERSION)
+  conf.define('PACKAGE_PREFIX', conf.env['PREFIX'])
+  conf.define('PACKAGE_DATADIR', conf.env['DATADIR'])
+
+  conf.write_config_header('config.h')
+
+def build(bld):
+  bld.add_subdirs ('share')
+  bld.add_subdirs ('lib')
   bld.add_subdirs ('src')
+  bld.add_subdirs ('examples')
 
-def dist ():
-  import os
-  folder = 'build/%s-%s' % (APPNAME, VERSION)
-  os.system ('rm -rf FOLDER ; mkdir FOLDER ; cp waf FOLDER ; cp wscript FOLDER && cd FOLDER && vim wscript -c ":%s/ vala//" -c ":wq"'.replace ('FOLDER', folder))
-  for src_folder in ['src']:
-    os.system ('cp -r SRCFOLDER FOLDER ; for file in `find ./build/default/SRCFOLDER -name "*.[ch]"` ; do cp $file FOLDER/SRCFOLDER ; done'.replace('SRCFOLDER', src_folder).replace ('FOLDER', folder))
-  os.system ('for file in `find FOLDER -name "*.vala"` ; do rm -rf $file ; done ; cd build ; tar -zcf APPNAME-VERSION.tar.gz APPNAME-VERSION ; tar -jcf APPNAME-VERSION.tar.bz2 APPNAME-VERSION.tar.bz2 ; rm -rf APPNAME-VERSION'.replace ('APPNAME', APPNAME).replace ('VERSION', VERSION).replace('FOLDER', folder))
-
+def shutdown():
+  import UnitTest
+  unittest = UnitTest.unit_test()
+  unittest.want_to_see_test_output = True
+  unittest.want_to_see_test_error = True
+  unittest.run()
+  unittest.print_results()

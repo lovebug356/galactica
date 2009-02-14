@@ -1,0 +1,8 @@
+object_static = bld.new_task_gen ('cc', 'staticlib')
+object_static.find_sources_in_dirs ('.')
+object_static.uselib='GSTREAMER'
+object_static.packages = 'gstreamer-0.10'
+object_static.target='galactica.object.static'
+object_static.includes = '../../'
+object_static.threading = True
+object_static.install_path = None

@@ -10,7 +10,6 @@ namespace Galactica {
     public extern static void reset (int val);
 
     public signal void key_press (int code);
-    public signal void stopped ();
 
     construct {
       running = false;
@@ -18,6 +17,7 @@ namespace Galactica {
 
     public void stop () {
       running = false;
+      reset (0);
     }
 
     public void start () {
@@ -33,7 +33,7 @@ namespace Galactica {
       while (running) {
         key_press (read_key ());
       }
-      stopped ();
+      stdout.printf ("\n");
       return null;
     }
   }

@@ -1,0 +1,10 @@
+lua_static = bld.new_task_gen ('cc', 'staticlib')
+lua_static.find_sources_in_dirs ('.')
+lua_static.uselib='LUA'
+lua_static.packages = 'lua5.1 config'
+lua_static.target='galactica.lua.static'
+lua_static.uselib_local = 'galactica.playlist.static'
+lua_static.includes = '../../'
+lua_static.vapi_dirs = './ ../config'
+lua_static.threading = True
+lua_static.install_path = None

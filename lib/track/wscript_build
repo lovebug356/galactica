@@ -1,0 +1,11 @@
+track_static = bld.new_task_gen ('cc', 'staticlib')
+track_static.find_sources_in_dirs ('.')
+track_static.uselib='GSTREAMER'
+track_static.packages = 'gstreamer-0.10'
+track_static.target='galactica.track.static'
+track_static.includes = '../../'
+track_static.threading = True
+track_static.uselib_local = 'galactica.object.static'
+track_static.install_path = None
+
+bld.add_subdirs ("tests")

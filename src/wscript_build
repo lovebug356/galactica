@@ -2,7 +2,9 @@
 
 galactica = bld.new_task_gen ('cc', 'program')
 galactica.find_sources_in_dirs ('.')
-galactica.uselib='GLIB GSTREAMER'
-galactica.packages = 'gstreamer-0.10'
+galactica.uselib='GSTREAMER'
+galactica.packages = 'gstreamer-0.10 config'
+galactica.uselib_local = 'galactica.console.static galactica.playlistbuilder.static galactica.lua.static'
 galactica.target='galactica'
 galactica.threading = True
+galactica.vapi_dirs = './ ../lib/config'

@@ -1,0 +1,11 @@
+def make_test (bld, name):
+  test = bld.new_task_gen ('cc', 'program')
+  test.source = 'test-%s.vala' % name
+  test.uselib_local = 'galactica.playlist.static'
+  test.includes = '../../../'
+  test.target = 'test-%s' % name
+  test.unit_test = True
+  test.threading = True
+  test.install_path = None
+
+make_test (bld, 'playlist')

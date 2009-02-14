@@ -19,10 +19,11 @@
  */
 
 #include <stdarg.h>
-#include <termios.h>
+#include <string.h>
 #include <sys/ioctl.h>
-#include <sys/wait.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
+#include <termios.h>
 
 void cons_set_raw(int b);
 
@@ -43,7 +44,7 @@ void cons_set_raw(int b)
   if (b) {
     if (termios_init == 0) {
       tcgetattr(0, &tio_old);
-      memcpy (&tio_new,&tio_old,sizeof(struct termios));
+      memcpy (&tio_new, &tio_old, sizeof(struct termios));
       tio_new.c_iflag &= ~(BRKINT|PARMRK|ISTRIP|INLCR|IGNCR|ICRNL|IXON);
       tio_new.c_lflag &= ~(ECHO|ECHONL|ICANON|ISIG|IEXTEN);
       tio_new.c_cflag &= ~(CSIZE|PARENB);

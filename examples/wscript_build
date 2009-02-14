@@ -1,0 +1,19 @@
+#!/usr/bin/env python
+
+simple_audiotestsrc_player = bld.new_task_gen ('cc', 'program')
+simple_audiotestsrc_player.source = 'simple_audiotestsrc_player.vala'
+simple_audiotestsrc_player.uselib_local = 'galactica.playlist.static'
+simple_audiotestsrc_player.packages = 'gstreamer-0.10'
+simple_audiotestsrc_player.target='simple_audiotestsrc_player'
+simple_audiotestsrc_player.threading = True
+simple_audiotestsrc_player.vapi_dirs = './'
+simple_audiotestsrc_player.install_path = None
+
+simple_file_player = bld.new_task_gen ('cc', 'program')
+simple_file_player.source = 'simple_file_player.vala'
+simple_file_player.uselib_local = 'galactica.playlist.static galactica.playlistbuilder.static'
+simple_file_player.packages = 'gstreamer-0.10'
+simple_file_player.target='simple_file_player'
+simple_file_player.threading = True
+simple_file_player.vapi_dirs = './'
+simple_file_player.install_path = None

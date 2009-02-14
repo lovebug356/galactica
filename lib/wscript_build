@@ -1,0 +1,8 @@
+#!/bin/python
+
+bld.add_subdirs ('object')
+bld.add_subdirs ('track')
+bld.add_subdirs ('console')
+bld.add_subdirs ('playlist')
+bld.add_subdirs ('playlistbuilder')
+bld.add_subdirs ('lua')

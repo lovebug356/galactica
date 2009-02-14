@@ -1,0 +1,3 @@
+#!/bin/python
+
+bld.install_files ("${PACKAGE_DATADIR}/", "galactica.lua")
