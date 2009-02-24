@@ -26,5 +26,9 @@ namespace Galactica {
     public virtual string to_string () {
       return "Unknown";
     }
+
+    public virtual string display_name () {
+      return to_string ();
+    }
   }
 }

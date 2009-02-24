@@ -62,7 +62,7 @@ namespace Galactica {
       playlist.repeat = repeat;
       playlist.shuffle = shuffle;
       playlist.auto_next = true;
-      playlist.new_track += (list, track, position) => output.new_track (track.to_string (), position, list.size);
+      playlist.new_track += (list, track, position) => output.new_track (track.display_name (), position, list.size);
       playlist.update_position += (list, pos, dur) => output.update_position (pos, dur);
       playlist.state_paused += list => output.state_paused ();
       playlist.end_of_playlist += list => quit ();

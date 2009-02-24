@@ -31,5 +31,9 @@ namespace Galactica {
     public override string to_string () {
       return Filename.display_name (uri);
     }
+
+    public override string display_name () {
+      return Filename.display_basename (uri).locale_to_utf8 (-1, null, null);
+    }
   }
 }

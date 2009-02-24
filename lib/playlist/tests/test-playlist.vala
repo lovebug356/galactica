@@ -14,12 +14,15 @@ class Test.Playlist : Trial.Suite {
   protected override void initialize () {
     name = "Galactica.Playlist";
     add_test_case ("add tracks", test_add_tracks);
+    add_test_case ("end_of_playlist", test_end_of_playlist);
+    add_test_case ("end_of_playlist_2", test_end_of_playlist_2);
+    add_test_case ("error_playlist", test_error_playlist);
     add_test_case ("no tracks", test_no_tracks);
-    add_test_case ("play single", test_play_single);
     add_test_case ("play more", test_play_more);
-    add_test_case ("remove currect", test_remove_current);
+    add_test_case ("play single", test_play_single);
     add_test_case ("play_prev", test_play_prev);
     add_test_case ("random_sort", test_random);
+    add_test_case ("remove currect", test_remove_current);
     add_test_case ("repeat", test_repeat);
   }
 
@@ -77,6 +80,12 @@ class Test.Playlist : Trial.Suite {
     assert_true (playlist.size == 3);
     assert_true (end_of_playlist_signal_counter == 0);
     assert_true (new_track_strings.size == 0);
+  }
+
+  void test_end_of_playlist () {
+    playlist.play_next ();
+
+    assert_true (end_of_playlist_signal_counter == 1);
   }
 
   void test_no_tracks () {
@@ -225,6 +234,42 @@ class Test.Playlist : Trial.Suite {
     }
 
     assert_true (shuffled_count > 12);
+  }
+
+  void test_end_of_playlist_2 () {
+    playlist.add_track (new CustomPipeline ("fakesrc num-buffers=100 ! fakesink"));
+
+    playlist.auto_next = true;
+
+    playlist.play_next ();
+
+    do {
+      /*Thread.usleep (100000);*/
+      async_spin (1);
+    } while (end_of_playlist_signal_counter == 0);
+    assert_true (end_of_playlist_signal_counter == 1);
+  }
+
+  void test_error_playlist () {
+    playlist.add_track (new CustomPipeline ("fakesrc num-buffers=10 ! fakesink"));
+    playlist.add_track (new CustomPipeline ("playbin uri=file:///tmp/non_existing_file.avi"));
+    playlist.add_track (new CustomPipeline ("fakesrc num-buffers=10 ! fakesink"));
+
+    playlist.auto_next = true;
+    playlist.auto_error = true;
+
+    playlist.play_next ();
+
+    do {
+      /*Thread.usleep (100000);*/
+      async_spin (1);
+    } while (end_of_playlist_signal_counter == 0);
+    assert_true (end_of_playlist_signal_counter > 0);
+    
+    assert_true (new_position.size == 3);
+    assert_true (new_position.get (0) == 1);
+    assert_true (new_position.get (1) == 2);
+    assert_true (new_position.get (2) == 2);
   }
 }
 

@@ -17,7 +17,7 @@ namespace Galactica {
     public bool shuffle {get;set;default=false;}
     public bool repeat {get;set;default=false;}
     public bool auto_next {get;set;default=false;}
-    public bool auto_remove {get;set;default=false;}
+    public bool auto_error {get;set;default=false;}
     public bool no_position_update {get;set;default=false;}
     public int64 position_delay {get;set;default=100000;}
 
@@ -50,6 +50,7 @@ namespace Galactica {
     }
 
     ~Playlist () {
+      stop ();
       query_position = false;
     }
 
@@ -94,8 +95,9 @@ namespace Galactica {
           }
           break;
         case Gst.MessageType.ERROR:
-          if (auto_remove) {
-            remove_track (current_track);
+          if (auto_error) {
+            remove_current_track ();
+            play_next ();
           } else {
             GLib.Error err = null;
             msg.parse_error (out err, null);
@@ -165,7 +167,7 @@ namespace Galactica {
         remove_current_element ();
         var position = tracks.index_of (current_track);
         remove_track (current_track);
-        if (position == 0 || tracks.size >= (position + 1)) {
+        if (position == 0) {
           current_track = null;
         } else {
           current_track = tracks.get (position - 1);

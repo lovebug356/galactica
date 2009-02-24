@@ -26,6 +26,7 @@ namespace Galactica.Lua {
     vm.register ("toggle_play_pause", toggle_play_pause);
     vm.register ("quit", quit);
     vm.register ("current_track", current_track);
+    vm.register ("current_display_name", current_display_name);
     vm.register ("no_position_update", no_position_update);
   }
 
@@ -33,6 +34,11 @@ namespace Galactica.Lua {
     bool temp = vm.to_boolean (1);
     playlist.no_position_update = temp;
     return 0;
+  }
+
+  static int current_display_name (LuaVM vm) {
+    vm.push_string (playlist.current_track.display_name ());
+    return 1;
   }
 
   static int current_track (LuaVM vm) {
