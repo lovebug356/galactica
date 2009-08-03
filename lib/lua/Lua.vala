@@ -100,5 +100,6 @@ namespace Galactica.Lua {
         return;
       }
     }
+    stdout.printf ("WARNING: no configuration file found\n");
   }
 }
