@@ -18,8 +18,8 @@ def configure(conf):
       uselib_store='GSTREAMER',
       mandatory=True,
       args='--cflags --libs')
-  conf.check_cfg (package='core-1.0',
-      uselib_store='CORE',
+  conf.check_cfg (package='gee-1.0',
+      uselib_store='GEE',
       mandatory=True,
       args='--cflags --libs')
   conf.check_cfg (package='lua5.1',
@@ -45,11 +45,3 @@ def build(bld):
   bld.add_subdirs ('lib')
   bld.add_subdirs ('src')
   bld.add_subdirs ('examples')
-
-def shutdown():
-  import UnitTest
-  unittest = UnitTest.unit_test()
-  unittest.want_to_see_test_output = True
-  unittest.want_to_see_test_error = True
-  unittest.run()
-  unittest.print_results()

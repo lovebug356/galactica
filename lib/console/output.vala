@@ -11,7 +11,7 @@ namespace Galactica {
     [CCode (cname="console_width")]
     public extern int console_width ();
 
-    private string message_scrap (string# message) {
+    private string message_scrap (owned string message) {
       string[] list = message.split ("%");
       string temp = "";
       foreach (string a in list) {

@@ -7,5 +7,3 @@ track_static.includes = '../../'
 track_static.threading = True
 track_static.uselib_local = 'galactica.object.static'
 track_static.install_path = None
-
-bld.add_subdirs ("tests")

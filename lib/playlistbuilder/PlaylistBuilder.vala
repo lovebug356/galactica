@@ -1,5 +1,5 @@
 using GLib;
-using Core.Container;
+using Gee;
 
 namespace Galactica {
   public class PlaylistBuilder : Galactica.Object {

@@ -1,6 +1,6 @@
 using Galactica;
 using Core;
-using Core.Container;
+using Gee;
 
 class Test.Playlist : Trial.Suite {
 

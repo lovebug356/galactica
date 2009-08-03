@@ -1,5 +1,5 @@
 using Galactica;
-using Core.Container;
+using Gee;
 using Gst;
 
 namespace Galactica {
