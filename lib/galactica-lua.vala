@@ -91,7 +91,9 @@ namespace Galactica.Lua {
       configuration_files.add (filename);
     configuration_files.add (Path.build_filename ("share", "galactica.lua"));
     configuration_files.add (Path.build_filename (Environment.get_home_dir (), ".galactica.lua"));
-    configuration_files.add (Path.build_filename (Config.PACKAGE_DATADIR, "galactica.lua"));
+    configuration_files.add (Path.build_filename (Environment.get_user_config_dir (), "galactica.lua"));
+    configuration_files.add (Path.build_filename (Config.DATADIR, "galactica.lua"));
+    configuration_files.add (Path.build_filename ("/usr/share", "galactica.lua"));
 
     foreach (string file in configuration_files) {
       if (FileUtils.test (file, FileTest.EXISTS)) {

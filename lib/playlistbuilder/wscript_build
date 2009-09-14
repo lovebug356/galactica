@@ -1,9 +1,0 @@
-playlistbuilder_static = bld.new_task_gen ('cc', 'staticlib')
-playlistbuilder_static.find_sources_in_dirs ('.')
-playlistbuilder_static.uselib='GEE'
-playlistbuilder_static.packages = 'gee-1.0'
-playlistbuilder_static.target='galactica.playlistbuilder.static'
-playlistbuilder_static.includes = '../../'
-playlistbuilder_static.threading = True
-playlistbuilder_static.uselib_local = 'galactica.object.static galactica.track.static galactica.playlist.static'
-playlistbuilder_static.install_path = None

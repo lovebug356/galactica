@@ -1,9 +1,0 @@
-playlist_static = bld.new_task_gen ('cc', 'staticlib')
-playlist_static.find_sources_in_dirs ('.')
-playlist_static.uselib='GSTREAMER GEE'
-playlist_static.packages = 'gstreamer-0.10 gee-1.0'
-playlist_static.target='galactica.playlist.static'
-playlist_static.includes = '../../'
-playlist_static.threading = True
-playlist_static.uselib_local = 'galactica.object.static galactica.track.static'
-playlist_static.install_path = None
