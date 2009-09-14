@@ -15,6 +15,7 @@ namespace Galactica {
     [NoArrayLength ()]
     static string[] opt_media_files;
     static string configuration_file;
+    static string configuration_playlist_file;
     static MainLoop loop;
     Galactica.Playlist playlist;
     Galactica.PlaylistBuilder builder;
@@ -27,6 +28,7 @@ namespace Galactica {
       {"custom-pipeline", 'p', 0, OptionArg.NONE, ref custom_pipeline, "Play a custom pipeline", null},
       {"disable-video", 'd', 0, OptionArg.NONE, ref disable_video, "use fakesink as video sink", null},
       {"playbin2", 'p', 0, OptionArg.NONE, ref playbin2, "Use Playbin2", null},
+      {"playlist", 'l', 0, OptionArg.FILENAME, ref configuration_playlist_file, "force playlist file", null},
       {"repeat", 'r', 0, OptionArg.NONE, ref repeat, "Repeat the playlist", null},
       {"shuffle", 's', 0, OptionArg.NONE, ref shuffle, "Shuffle playlist", null},
       {"version", 'v', 0, OptionArg.NONE, ref version, "Display version number", null},
@@ -50,12 +52,16 @@ namespace Galactica {
       builder.playbin2 = playbin2;
 
       /* add the media files */
-      int i = 0;
-      string uri = opt_media_files[i++];
-      while (uri != null) {
-        builder.uri_add (uri);
-        uri = opt_media_files[i++];
+      if (opt_media_files != null) {
+        int i = 0;
+        string uri = opt_media_files[i++];
+        while (uri != null) {
+          builder.uri_add (uri);
+          uri = opt_media_files[i++];
+        }
       }
+      /* add the playlist */
+      builder.new_m3u_file (configuration_playlist_file);
 
       playlist = builder.get_playlist ();
       /* set some options on the playlist */
@@ -114,7 +120,7 @@ namespace Galactica {
         return 1;
       }
 
-      if (opt_media_files == null) {
+      if (opt_media_files == null && configuration_playlist_file == null) {
         stdout.printf ("No media files specified.\n");
         return 1;
       }
