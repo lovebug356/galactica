@@ -8,7 +8,7 @@ AM_VALAFLAGS = \
 
 AM_CFLAGS = \
   $(GALACTICA_CFLAGS) \
-  -I$(top_builddir)/lib \
+  -I$(top_srcdir)/lib \
   $(NULL)
 
 AM_LDFLAGS = \

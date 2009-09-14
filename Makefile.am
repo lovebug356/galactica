@@ -1,1 +1,1 @@
-SUBDIRS=lib examples data tests src
+SUBDIRS=lib examples data tests src scripts
