@@ -1,4 +1,4 @@
-AC_INIT([galactica], [0.2.0],
+AC_INIT([galactica], [0.2.1],
   [http://galactica.digitalmediaplanet.net])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS(config.h)
