@@ -1,2 +1,3 @@
-#!/bin/bash
+# Thanks to pancake <@youterm.com>
+
 wget -nv -O - http://8bc.org/rss/music|grep mp3|sed 's/.*\(http.*\)" l.*/\1/'>/tmp/8bit.m3u ; galactica /tmp/8bit.m3u
