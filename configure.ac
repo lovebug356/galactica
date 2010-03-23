@@ -1,4 +1,4 @@
-AC_INIT([galactica], [0.2.1],
+AC_INIT([galactica], [0.2.2],
   [http://galactica.digitalmediaplanet.net])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS(config.h)
@@ -26,6 +26,7 @@ PKG_CHECK_MODULES(GALACTICA, glib-2.0 >= $GLIB_REQUIRED
                             gobject-2.0 >= $GLIB_REQUIRED
                             gee-1.0 >= $GEE_REQUIRED
                             gstreamer-0.10 >= $GST_REQUIRED
+                            libsoup-2.4
                             )
 AC_SUBST(GALACTICA_CFLAGS)
 AC_SUBST(GALACTICA_LIBS)

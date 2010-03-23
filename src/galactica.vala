@@ -28,7 +28,7 @@ namespace Galactica {
       {"custom-pipeline", 'p', 0, OptionArg.NONE, ref custom_pipeline, "Play a custom pipeline", null},
       {"disable-video", 'd', 0, OptionArg.NONE, ref disable_video, "use fakesink as video sink", null},
       {"playbin2", 'p', 0, OptionArg.NONE, ref playbin2, "Use Playbin2", null},
-      {"playlist", 'l', 0, OptionArg.FILENAME, ref configuration_playlist_file, "force playlist file", null},
+      {"playlist", 'l', 0, OptionArg.FILENAME, ref configuration_playlist_file, "force playlist file or dynamic playlists (8bit)", null},
       {"repeat", 'r', 0, OptionArg.NONE, ref repeat, "Repeat the playlist", null},
       {"shuffle", 's', 0, OptionArg.NONE, ref shuffle, "Shuffle playlist", null},
       {"version", 'v', 0, OptionArg.NONE, ref version, "Display version number", null},
@@ -60,11 +60,21 @@ namespace Galactica {
           uri = opt_media_files[i++];
         }
       }
-      /* add the playlist */
-      if (configuration_playlist_file != null)
-        builder.new_m3u_file (configuration_playlist_file);
 
-      playlist = builder.get_playlist ();
+      /* add the playlist */
+      if (configuration_playlist_file != null) {
+        if (configuration_playlist_file == "8bit") {
+          var collective = new Collective.Playlist ();
+          collective.music_rss ();
+          playlist = collective.playlist;
+        } else {
+          builder.new_m3u_file (configuration_playlist_file);
+          playlist = builder.get_playlist ();
+        }
+      } else {
+        playlist = builder.get_playlist ();
+      }
+
       /* set some options on the playlist */
       playlist.repeat = repeat;
       playlist.shuffle = shuffle;
@@ -112,7 +122,7 @@ namespace Galactica {
         opt_context.parse (ref args);
       } catch (OptionError e) {
         stdout.printf ("%s\n", e.message);
-        stdout.printf ("Run '%s --help' to see a full list of available command line options.", args[0]);
+        stdout.printf ("Run '%s --help' to see a full list of available command line options.\n", args[0]);
         return 1;
       }
 
@@ -121,7 +131,8 @@ namespace Galactica {
         return 1;
       }
 
-      if (opt_media_files == null && configuration_playlist_file == null) {
+      if (opt_media_files == null &&
+          configuration_playlist_file == null) {
         stdout.printf ("No media files specified.\n");
         return 1;
       }

@@ -4,7 +4,7 @@ using Gst;
 
 namespace Galactica {
   public class Playlist : Galactica.Object {
-    ArrayList<Galactica.Track> tracks;
+    protected ArrayList<Galactica.Track> tracks;
     Gst.Element pipeline;
     Gst.Element element;
     Gst.Bus bus;

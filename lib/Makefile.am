@@ -16,6 +16,11 @@ libgalactica_la_SOURCES = \
   galactica-track-playbin1.vala \
   galactica-track-playbin2.vala \
   galactica-track.vala \
+  collective-item-list.vala \
+  collective-item.vala \
+  collective-parser.vala \
+  collective-session-playlist.vala \
+  collective-session.vala \
   $(NULL)
 
 libgalactica_la_VALAFLAGS = \
@@ -26,6 +31,7 @@ libgalactica_la_VALAFLAGS = \
   --pkg gstreamer-0.10 \
   --pkg lua5.1 \
   --pkg config \
+  --pkg libsoup-2.4 \
   $(NULL)
 
 libgalactica_la_CFLAGS = \
