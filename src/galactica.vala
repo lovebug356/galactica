@@ -61,7 +61,8 @@ namespace Galactica {
         }
       }
       /* add the playlist */
-      builder.new_m3u_file (configuration_playlist_file);
+      if (configuration_playlist_file != null)
+        builder.new_m3u_file (configuration_playlist_file);
 
       playlist = builder.get_playlist ();
       /* set some options on the playlist */
